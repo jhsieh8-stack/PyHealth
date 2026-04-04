@@ -2,10 +2,10 @@ import unittest
 import torch
 
 from pyhealth.datasets import SampleDataset, get_dataloader
-from pyhealth.models import EEGRealTimeDetectorModel
+from pyhealth.models import EEGCnnLstmModel
 
 
-class TestEEGRealTimeDetectorModel(unittest.TestCase):
+class TestEEGCnnLstmModel(unittest.TestCase):
 
     def setUp(self):
         self.samples = [
@@ -45,10 +45,10 @@ class TestEEGRealTimeDetectorModel(unittest.TestCase):
             dataset_name="test",
         )
 
-        self.model = EEGRealTimeDetectorModel(dataset=self.dataset, embedding_dim=64, hidden_dim=64)
+        self.model = EEGCnnLstmModel(dataset=self.dataset, embedding_dim=64, hidden_dim=64)
 
     def test_model_initialization(self):
-        self.assertIsInstance(self.model, EEGRealTimeDetectorModel)
+        self.assertIsInstance(self.model, EEGCnnLstmModel)
     #     self.assertEqual(self.model.embedding_dim, 64)
     #     self.assertEqual(self.model.hidden_dim, 64)
     #     self.assertEqual(self.model.num_layers, 1)

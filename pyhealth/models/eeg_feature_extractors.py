@@ -58,3 +58,105 @@ class PsdFeatureExtractor(nn.Module):
             psds_batch.append(torch.stack(psd_sample))
 
         return torch.stack(psds_batch)
+
+
+CNN_LSTM = 'cnn_lstm'
+RESNET_LSTM = 'resnet_lstm'
+RAW = 'raw'
+PSD = 'psd'
+
+FEATURE_EXTRACTORS = nn.ModuleDict([
+    [ RAW, None ],
+    [ PSD, PsdFeatureExtractor() ],
+])
+
+CONV2D = {
+    RAW: {
+        'kernel_1': (1,51), 'stride_1': (1,4), 'padding_1': (0,25),
+        'kernel_2': (1,21), 'stride_2': (1,2), 'padding_2': (0,10),
+        'kernel_3': (1,9), 'stride_3': (1,2), 'padding_3': (0,4),
+    },
+    PSD: {
+        'kernel_1': (7,21), 'stride_1': (7,2), 'padding_1': (0,10),
+        'kernel_2': (1,21), 'stride_2': (1,2), 'padding_2': (0,10),
+        'kernel_3': (1,9), 'stride_3': (1,1), 'padding_3': (0,4),
+    }
+}
+
+MAX2D = {
+    RAW: { 'kernel': (1,4), 'stride': (1,4) },
+    PSD: { 'kernel': (1,2), 'stride': (1,2) },
+}
+
+CONV = 'conv'
+MAXPOOL = 'maxpool'
+ORDER2D = {
+    CNN_LSTM: {
+        RAW: { CONV, MAXPOOL, CONV, CONV },
+        PSD: { CONV, CONV, MAXPOOL, CONV },
+    },
+    RESNET_LSTM: {
+        RAW: { CONV, MAXPOOL },
+        PSD: { CONV, MAXPOOL },
+    },
+}
+
+
+def get_feature_extractor(encoder):
+    return FEATURE_EXTRACTORS[encoder]
+
+def feature_extractor_conv2d(
+    model,
+    in_channel,
+    out_channel,
+    kernel_size,
+    stride,
+    padding,
+    activation,
+    dropout,
+):
+    if model == CNN_LSTM:
+        return nn.Sequential(
+            nn.Conv2d(in_channel, out_channel, kernel_size=kernel_size, stride=stride, padding=padding),
+            nn.BatchNorm2d(out_channel),
+            activation,
+            dropout,
+        )
+    elif model == RESNET_LSTM:
+        return nn.Sequential(
+            nn.Conv2d(in_channel, out_channel, kernel_size=kernel_size, stride=stride, padding=padding, dilation=1),
+            nn.BatchNorm2d(out_channel),
+            activation,
+        )
+
+def get_feature_extractor_cnn(
+    model,
+    encoder,
+    conv_in_channels,
+    conv_out_channels,
+    activation,
+    dropout,
+):
+    layers = []
+    conv_count = 1
+    conv2d_pms = CONV2D[encoder]
+    max2d_pms = MAX2D[encoder]
+    for layer in ORDER2D[model][encoder]:
+        if layer == CONV:
+            layers.append(feature_extractor_conv2d(
+                model,
+                conv_in_channels[conv_count-1],
+                conv_out_channels[conv_count-1],
+                conv2d_pms[f"kernel_{conv_count}"],
+                conv2d_pms[f"stride_{conv_count}"],
+                conv2d_pms[f"padding_{conv_count}"],
+                activation,
+                dropout,
+            ))
+            conv_count += 1
+        elif layer == MAXPOOL:
+            layers.append(nn.MaxPool2d(
+                kernel_size=max2d_pms['kernel'],
+                stride=max2d_pms['stride'],
+            ))
+    return nn.Sequential(*layers)

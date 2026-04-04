@@ -3,16 +3,7 @@ import torch
 from torch import nn
 
 from pyhealth.datasets import SampleDataset
-from pyhealth.models import BaseModel, PsdFeatureExtractor
-
-
-RAW = "raw"
-PSD = "psd"
-
-FEATURE_EXTRACTORS = nn.ModuleDict([
-    [RAW, None],
-    [PSD, PsdFeatureExtractor()],
-])
+from pyhealth.models import BaseModel, get_feature_extractor, get_feature_extractor_cnn, RESNET_LSTM
 
 
 class BasicBlock(nn.Module):
@@ -60,25 +51,18 @@ class Conv2dResNetLSTM(BaseModel):
         self.device = device
         self.hidden_dim = 256
 
-        self.feature_extractor = FEATURE_EXTRACTORS[self.encoder]
+        self.feature_extractor = get_feature_extractor(self.encoder)
         self.activation = nn.ReLU(inplace=True)
         self.dropout = nn.Dropout(dropout)
 
-        if self.encoder == RAW:
-            self.conv1 = nn.Sequential(
-                nn.Conv2d(in_channel, 64, kernel_size=(1,51), stride=(1,4), padding=(0,25)),
-                nn.BatchNorm2d(64),
-                self.activation,
-            )
-            self.maxpool = nn.MaxPool2d((1,4), (1,4))
-
-        elif self.encoder == PSD:
-            self.conv1 = nn.Sequential(
-                nn.Conv2d(1, 64, kernel_size=(7,21), stride=(7,2), padding=(0,10)),
-                nn.BatchNorm2d(64),
-                self.activation,
-            )
-            self.maxpool = nn.MaxPool2d((1,2), (1,2))
+        self.feature_extractor_cnn = get_feature_extractor_cnn(
+            model             = RESNET_LSTM,
+            encoder           = self.encoder,
+            conv_in_channels  = [self.in_channel, 64],
+            conv_out_channels = [64, 128],
+            activation        = self.activation,
+            dropout           = self.dropout,
+        )
 
         self.in_planes = 64
         self.layer1 = self._make_layer(64, num_blocks=2, stride=1)
@@ -121,8 +105,7 @@ class Conv2dResNetLSTM(BaseModel):
         else:
             x = x.unsqueeze(1)
 
-        x = self.conv1(x)
-        x = self.maxpool(x)
+        x = self.feature_extractor_cnn(x)
 
         x = self.layer1(x)
         x = self.layer2(x)
