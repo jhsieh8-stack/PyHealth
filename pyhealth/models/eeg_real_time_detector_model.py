@@ -1,5 +1,3 @@
-from typing import Dict
-
 import torch
 from torch import nn
 
@@ -37,7 +35,7 @@ ORDER2D = {
     PSD: { CONV, CONV, MAXPOOL, CONV},
 }
 
-class Conv2dEegDetectorModel(BaseModel):
+class EEGRealTimeDetectorModel(BaseModel):
     def __init__(
             self,
             dataset: SampleDataset,
@@ -49,7 +47,7 @@ class Conv2dEegDetectorModel(BaseModel):
             device: str,
             dropout: float = 0.5,
         ):
-        super(Conv2dEegDetectorModel, self).__init__(
+        super(EEGRealTimeDetectorModel, self).__init__(
             dataset=dataset,
         )
         self.encoder = encoder
