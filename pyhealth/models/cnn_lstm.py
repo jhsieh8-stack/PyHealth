@@ -1,4 +1,4 @@
-# Description: EEGCnnLstmModel implementation for PyHealth 2.0
+# Description: CNNLSTM implementation for PyHealth 2.0
 
 import torch
 from torch import nn
@@ -6,7 +6,7 @@ from pyhealth.datasets import SampleDataset
 from pyhealth.models import BaseModel, get_feature_extractor, get_feature_extractor_cnn, CNN_LSTM
 
 
-class EEGCnnLstmModel(BaseModel):
+class CNNLSTM(BaseModel):
     """CNN + LSTM model for EEG classification in PyHealth 2.0.
 
     The model processes raw multi-channel EEG signals through a pre-trained
@@ -60,7 +60,7 @@ class EEGCnnLstmModel(BaseModel):
         ...     output_schema={"label": "binary"},
         ...     dataset_name="toy",
         ... )
-        >>> model = EEGCnnLstmModel(
+        >>> model = CNNLSTM(
         ...     dataset,
         ...     encoder="stft",
         ...     num_layers=2,
@@ -82,7 +82,7 @@ class EEGCnnLstmModel(BaseModel):
             device: str,
             dropout: float = 0.5,
         ):
-        super(EEGCnnLstmModel, self).__init__(
+        super(CNNLSTM, self).__init__(
             dataset=dataset,
         )
         self.encoder = encoder

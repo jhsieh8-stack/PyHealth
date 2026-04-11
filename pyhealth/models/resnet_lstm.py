@@ -1,4 +1,4 @@
-# Description: Conv2dResNetLSTM model implementation for PyHealth 2.0
+# Description: ResNetLSTM model implementation for PyHealth 2.0
 
 from typing import Dict
 import torch
@@ -52,7 +52,7 @@ class BasicBlock(nn.Module):
         return torch.relu(out)
 
 
-class Conv2dResNetLSTM(BaseModel):
+class ResNetLSTM(BaseModel):
     """2-D ResNet + LSTM model for ECG / multivariate timeseries classification.
 
     The model processes each input sample through a configurable feature
@@ -109,7 +109,7 @@ class Conv2dResNetLSTM(BaseModel):
         ...     output_schema={"label": "binary"},
         ...     dataset_name="toy",
         ... )
-        >>> model = Conv2dResNetLSTM(
+        >>> model = ResNetLSTM(
         ...     dataset,
         ...     encoder="resnet",
         ...     num_layers=2,
