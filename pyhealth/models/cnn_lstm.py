@@ -3,7 +3,8 @@
 import torch
 from torch import nn
 from pyhealth.datasets import SampleDataset
-from pyhealth.models import BaseModel, get_feature_extractor, get_feature_extractor_cnn, CNN_LSTM
+from pyhealth.models import BaseModel
+from .eeg_feature_extractors import get_feature_extractor, get_feature_extractor_cnn
 
 
 class CNNLSTM(BaseModel):
