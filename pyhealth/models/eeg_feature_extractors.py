@@ -72,14 +72,14 @@ FEATURE_EXTRACTORS = nn.ModuleDict([
 
 CONV2D = {
     RAW: {
-        'kernel_1': (1,51), 'stride_1': (1,4), 'padding_1': (0,25),
-        'kernel_2': (1,21), 'stride_2': (1,2), 'padding_2': (0,10),
-        'kernel_3': (1,9), 'stride_3': (1,2), 'padding_3': (0,4),
+        'in_1': 1,   'out_1': 64,   'kernel_1': (1,51), 'stride_1': (1,4), 'padding_1': (0,25),
+        'in_2': 64,  'out_2': 128,  'kernel_2': (1,21), 'stride_2': (1,2), 'padding_2': (0,10),
+        'in_3': 128, 'out_3': 256,  'kernel_3': (1,9),  'stride_3': (1,2), 'padding_3': (0,4),
     },
     PSD: {
-        'kernel_1': (7,21), 'stride_1': (7,2), 'padding_1': (0,10),
-        'kernel_2': (1,21), 'stride_2': (1,2), 'padding_2': (0,10),
-        'kernel_3': (1,9), 'stride_3': (1,1), 'padding_3': (0,4),
+        'in_1': 1,   'out_1': 64,   'kernel_1': (7,21), 'stride_1': (7,2), 'padding_1': (0,10),
+        'in_2': 64,  'out_2': 128,  'kernel_2': (1,21), 'stride_2': (1,2), 'padding_2': (0,10),
+        'in_3': 128, 'out_3': 256,  'kernel_3': (1,9), 'stride_3': (1,1), 'padding_3': (0,4),
     }
 }
 
@@ -101,62 +101,75 @@ ORDER2D = {
     },
 }
 
+class FeatureExtractorManager:
+    def __init__(
+        self,
+        model,
+        encoder,
+    ):
+        self.model   = model
+        self.encoder = encoder
 
-def get_feature_extractor(encoder):
-    return FEATURE_EXTRACTORS[encoder]
+    def get_feature_extractor(self):
+        return FEATURE_EXTRACTORS[self.encoder]
 
-def feature_extractor_conv2d(
-    model,
-    in_channel,
-    out_channel,
-    kernel_size,
-    stride,
-    padding,
-    activation,
-    dropout,
-):
-    if model == CNN_LSTM:
-        return nn.Sequential(
-            nn.Conv2d(in_channel, out_channel, kernel_size=kernel_size, stride=stride, padding=padding),
-            nn.BatchNorm2d(out_channel),
-            activation,
-            dropout,
-        )
-    elif model == RESNET_LSTM:
-        return nn.Sequential(
-            nn.Conv2d(in_channel, out_channel, kernel_size=kernel_size, stride=stride, padding=padding, dilation=1),
-            nn.BatchNorm2d(out_channel),
-            activation,
-        )
+    def get_feature_extractor_cnn(
+        self,
+        activation,
+        dropout,
+    ):
+        layers = []
+        conv_count = 1
+        conv2d_pms = CONV2D[self.encoder]
+        max2d_pms = MAX2D[self.encoder]
+        for layer in ORDER2D[self.model][self.encoder]:
+            if layer == CONV:
+                layers.append(self.__feature_extractor_conv2d(
+                    self.model,
+                    conv2d_pms[f"in_{conv_count}"],
+                    conv2d_pms[f"out_{conv_count}"],
+                    conv2d_pms[f"kernel_{conv_count}"],
+                    conv2d_pms[f"stride_{conv_count}"],
+                    conv2d_pms[f"padding_{conv_count}"],
+                    activation,
+                    dropout,
+                ))
+                conv_count += 1
+            elif layer == MAXPOOL:
+                layers.append(nn.MaxPool2d(
+                    kernel_size=max2d_pms['kernel'],
+                    stride=max2d_pms['stride'],
+                ))
+        return nn.Sequential(*layers)
 
-def get_feature_extractor_cnn(
-    model,
-    encoder,
-    conv_in_channels,
-    conv_out_channels,
-    activation,
-    dropout,
-):
-    layers = []
-    conv_count = 1
-    conv2d_pms = CONV2D[encoder]
-    max2d_pms = MAX2D[encoder]
-    for layer in ORDER2D[model][encoder]:
-        if layer == CONV:
-            layers.append(feature_extractor_conv2d(
-                model,
-                conv_in_channels[conv_count-1],
-                conv_out_channels[conv_count-1],
-                conv2d_pms[f"kernel_{conv_count}"],
-                conv2d_pms[f"stride_{conv_count}"],
-                conv2d_pms[f"padding_{conv_count}"],
+    def __feature_extractor_conv2d(
+        self,
+        in_channel,
+        out_channel,
+        kernel_size,
+        stride,
+        padding,
+        activation,
+        dropout,
+    ):
+        if self.model == CNN_LSTM:
+            return nn.Sequential(
+                nn.Conv2d(in_channel, out_channel, kernel_size=kernel_size, stride=stride, padding=padding),
+                nn.BatchNorm2d(out_channel),
                 activation,
                 dropout,
-            ))
-            conv_count += 1
-        elif layer == MAXPOOL:
-            layers.append(nn.MaxPool2d(
-                kernel_size=max2d_pms['kernel'],
-                stride=max2d_pms['stride'],
-            ))
-    return nn.Sequential(*layers)
+            )
+        elif self.model == RESNET_LSTM:
+            return nn.Sequential(
+                nn.Conv2d(in_channel, out_channel, kernel_size=kernel_size, stride=stride, padding=padding, dilation=1),
+                nn.BatchNorm2d(out_channel),
+                activation,
+            )
+
+    def transform_features(self, x):
+        if self.encoder == RAW:
+            return x.unsqueeze(1)
+        elif self.encoder == PSD:
+            return x.reshape(x.size(0), -1, x.size(3)).unsqueeze(1)
+        return x
+
