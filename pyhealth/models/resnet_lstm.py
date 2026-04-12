@@ -1,12 +1,11 @@
 # Description: ResNetLSTM model implementation for PyHealth 2.0
 
-from typing import Dict
 import torch
 from torch import nn
 
 from pyhealth.datasets import SampleDataset
 from pyhealth.models import BaseModel
-from .eeg_feature_extractors import get_feature_extractor, get_feature_extractor_cnn
+from .eeg_feature_extractors import get_feature_extractor, get_feature_extractor_cnn, RESNET_LSTM
 
 
 class BasicBlock(nn.Module):
