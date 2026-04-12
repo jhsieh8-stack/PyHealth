@@ -32,7 +32,6 @@ class CNNLSTM(BaseModel):
         dataset (SampleDataset): dataset with fitted input and output processors.
         encoder (str): name of the pre-trained feature extractor backbone.
         num_layers (int): number of LSTM layers.
-        in_channel (int): number of input channels (i.e. EEG electrodes / leads).
         output_dim (int): number of output classes / regression targets.
         batch_size (int): batch size; used to initialise the LSTM hidden state.
         device (str): device string for hidden-state initialisation (e.g. ``"cuda"``).
@@ -65,7 +64,6 @@ class CNNLSTM(BaseModel):
         ...     dataset,
         ...     encoder="stft",
         ...     num_layers=2,
-        ...     in_channel=64,
         ...     output_dim=2,
         ...     batch_size=32,
         ...     device="cpu",
