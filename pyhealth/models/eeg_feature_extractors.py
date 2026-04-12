@@ -72,14 +72,14 @@ FEATURE_EXTRACTORS = nn.ModuleDict([
 
 CONV2D = {
     RAW: {
-        'kernel_1': (1,51), 'stride_1': (1,4), 'padding_1': (0,25),
-        'kernel_2': (1,21), 'stride_2': (1,2), 'padding_2': (0,10),
-        'kernel_3': (1,9), 'stride_3': (1,2), 'padding_3': (0,4),
+        'in_1': 1,   'out_1': 64,   'kernel_1': (1,51), 'stride_1': (1,4), 'padding_1': (0,25),
+        'in_2': 64,  'out_2': 128,  'kernel_2': (1,21), 'stride_2': (1,2), 'padding_2': (0,10),
+        'in_3': 128, 'out_3': 256,  'kernel_3': (1,9),  'stride_3': (1,2), 'padding_3': (0,4),
     },
     PSD: {
-        'kernel_1': (7,21), 'stride_1': (7,2), 'padding_1': (0,10),
-        'kernel_2': (1,21), 'stride_2': (1,2), 'padding_2': (0,10),
-        'kernel_3': (1,9), 'stride_3': (1,1), 'padding_3': (0,4),
+        'in_1': 1,   'out_1': 64,   'kernel_1': (7,21), 'stride_1': (7,2), 'padding_1': (0,10),
+        'in_2': 64,  'out_2': 128,  'kernel_2': (1,21), 'stride_2': (1,2), 'padding_2': (0,10),
+        'in_3': 128, 'out_3': 256,  'kernel_3': (1,9), 'stride_3': (1,1), 'padding_3': (0,4),
     }
 }
 
@@ -132,8 +132,6 @@ def feature_extractor_conv2d(
 def get_feature_extractor_cnn(
     model,
     encoder,
-    conv_in_channels,
-    conv_out_channels,
     activation,
     dropout,
 ):
@@ -145,8 +143,8 @@ def get_feature_extractor_cnn(
         if layer == CONV:
             layers.append(feature_extractor_conv2d(
                 model,
-                conv_in_channels[conv_count-1],
-                conv_out_channels[conv_count-1],
+                conv2d_pms[f"in_{conv_count}"],
+                conv2d_pms[f"out_{conv_count}"],
                 conv2d_pms[f"kernel_{conv_count}"],
                 conv2d_pms[f"stride_{conv_count}"],
                 conv2d_pms[f"padding_{conv_count}"],
@@ -160,3 +158,14 @@ def get_feature_extractor_cnn(
                 stride=max2d_pms['stride'],
             ))
     return nn.Sequential(*layers)
+
+def transform_features(
+    model,
+    encoder,
+    x
+):
+    if encoder == RAW:
+        return x.unsqueeze(1)
+    elif encoder == PSD:
+        return x.reshape(x.size(0), -1, x.size(3)).unsqueeze(1)
+    return x

@@ -5,7 +5,12 @@ from torch import nn
 
 from pyhealth.datasets import SampleDataset
 from pyhealth.models import BaseModel
-from .eeg_feature_extractors import get_feature_extractor, get_feature_extractor_cnn, RESNET_LSTM
+from .eeg_feature_extractors import (
+    get_feature_extractor,
+    get_feature_extractor_cnn,
+    transform_features,
+    RESNET_LSTM
+)
 
 
 class BasicBlock(nn.Module):
@@ -125,7 +130,6 @@ class ResNetLSTM(BaseModel):
         dataset: SampleDataset,
         encoder: str,
         num_layers: int,
-        in_channel: int,
         output_dim: int,
         batch_size: int,
         device: str,
@@ -135,7 +139,6 @@ class ResNetLSTM(BaseModel):
 
         self.encoder = encoder
         self.num_layers = num_layers
-        self.in_channel = in_channel
         self.output_dim = output_dim
         self.batch_size = batch_size
         self.device = device
@@ -148,8 +151,6 @@ class ResNetLSTM(BaseModel):
         self.feature_extractor_cnn = get_feature_extractor_cnn(
             model             = RESNET_LSTM,
             encoder           = self.encoder,
-            conv_in_channels  = [self.in_channel, 64],
-            conv_out_channels = [64, 128],
             activation        = self.activation,
             dropout           = self.dropout,
         )
@@ -215,9 +216,8 @@ class ResNetLSTM(BaseModel):
 
         if self.feature_extractor is not None:
             x = self.feature_extractor(x)
-            x = x.reshape(x.size(0), -1, x.size(3)).unsqueeze(1)
-        else:
-            x = x.unsqueeze(1)
+        
+        x = transform_features(x)
 
         x = self.feature_extractor_cnn(x)
 
