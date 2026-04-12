@@ -127,7 +127,6 @@ class ResNetLSTM(BaseModel):
         num_layers: int,
         output_dim: int,
         batch_size: int,
-        device: str,
         dropout: float = 0.5,
     ):
         super().__init__(dataset=dataset)
@@ -136,7 +135,6 @@ class ResNetLSTM(BaseModel):
         self.num_layers = num_layers
         self.output_dim = output_dim
         self.batch_size = batch_size
-        self.device = device
         self.hidden_dim = 256
 
         self.feature_manager = FeatureExtractorManager(model=RESNET_LSTM, encoder=self.encoder)
@@ -222,8 +220,8 @@ class ResNetLSTM(BaseModel):
         x = x.permute(0, 2, 1)
 
         hidden = (
-            torch.zeros(self.num_layers, self.batch_size, self.hidden_dim).to(self.device),
-            torch.zeros(self.num_layers, self.batch_size, self.hidden_dim).to(self.device),
+            torch.zeros(self.num_layers, self.batch_size, self.hidden_dim),
+            torch.zeros(self.num_layers, self.batch_size, self.hidden_dim),
         )
 
         output, hidden = self.lstm(x, hidden)
