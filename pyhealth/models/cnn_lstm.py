@@ -101,7 +101,7 @@ class CNNLSTM(BaseModel):
 
         self.hidden_dim = 256
         self.lstm = nn.LSTM(
-                input_size=256,
+                input_size=self.feature_manager.output_dim,
                 hidden_size=self.hidden_dim,
                 num_layers=self.num_layers,
                 batch_first=True,
