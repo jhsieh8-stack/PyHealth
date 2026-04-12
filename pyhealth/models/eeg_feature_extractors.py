@@ -125,7 +125,6 @@ class FeatureExtractorManager:
         for layer in ORDER2D[self.model][self.encoder]:
             if layer == CONV:
                 layers.append(self.__feature_extractor_conv2d(
-                    self.model,
                     conv2d_pms[f"in_{conv_count}"],
                     conv2d_pms[f"out_{conv_count}"],
                     conv2d_pms[f"kernel_{conv_count}"],
