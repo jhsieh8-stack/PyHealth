@@ -4,12 +4,8 @@ import torch
 from torch import nn
 from pyhealth.datasets import SampleDataset
 from pyhealth.models import BaseModel
-from .eeg_feature_extractors import (
-    get_feature_extractor,
-    get_feature_extractor_cnn,
-    transform_features,
-    CNN_LSTM
-)
+from .eeg_feature_extractors import FeatureExtractorManager, CNN_LSTM
+
 
 class CNNLSTM(BaseModel):
     """CNN + LSTM model for EEG classification in PyHealth 2.0.
@@ -95,20 +91,19 @@ class CNNLSTM(BaseModel):
         self.batch_size = batch_size
         self.device = device
 
-        self.feature_extractor = get_feature_extractor(self.encoder)
+        self.feature_manager = FeatureExtractorManager(model=CNN_LSTM, encoder=self.encoder)
+        self.feature_extractor = self.feature_manager.get_feature_extractor()
+        self.feature_transformer = self.feature_manager.transform_features
         self.activation = nn.ReLU(inplace=True)
         self.dropout = nn.Dropout(p=dropout)
-        self.hidden_dim = 256
-
-        self.feature_extractor_cnn = get_feature_extractor_cnn(
-            model             = CNN_LSTM,
-            encoder           = self.encoder,
+        self.feature_extractor_cnn = self.feature_manager.get_feature_extractor_cnn(
             activation        = self.activation,
             dropout           = self.dropout,
         )
 
         self.agvpool = nn.AdaptiveAvgPool2d((1,1))
 
+        self.hidden_dim = 256
         self.lstm = nn.LSTM(
                 input_size=256,
                 hidden_size=self.hidden_dim,
@@ -136,9 +131,9 @@ class CNNLSTM(BaseModel):
         """
         x = x.permute(0, 2, 1)
 
-        x = self.feature_extractor(x)
-        x = transform_features(x)
-
+        if self.feature_extractor is not None:
+            x = self.feature_extractor(x)
+        x = self.feature_transformer(x)
         x = self.feature_extractor_cnn(x)
 
         x = self.agvpool(x)
