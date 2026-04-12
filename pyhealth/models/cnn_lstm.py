@@ -77,7 +77,6 @@ class CNNLSTM(BaseModel):
             num_layers: int,
             output_dim: int,
             batch_size: str,
-            device: str,
             dropout: float = 0.5,
         ):
         super(CNNLSTM, self).__init__(
@@ -87,7 +86,6 @@ class CNNLSTM(BaseModel):
         self.num_layers = num_layers
         self.output_dim = output_dim
         self.batch_size = batch_size
-        self.device = device
 
         self.feature_manager = FeatureExtractorManager(model=CNN_LSTM, encoder=self.encoder)
         self.feature_extractor = self.feature_manager.get_feature_extractor()
@@ -139,8 +137,8 @@ class CNNLSTM(BaseModel):
         x = x.permute(0, 2, 1)
 
         self.hidden = (
-            (torch.zeros(self.num_layers, self.batch_size, self.hidden_dim).to(self.device),
-             torch.zeros(self.num_layers, self.batch_size, self.hidden_dim).to(self.device))
+            (torch.zeros(self.num_layers, self.batch_size, self.hidden_dim),
+             torch.zeros(self.num_layers, self.batch_size, self.hidden_dim))
         )
 
         output, self.hidden = self.lstm(x, self.hidden)
