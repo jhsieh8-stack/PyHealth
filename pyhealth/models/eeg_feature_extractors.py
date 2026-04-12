@@ -92,12 +92,12 @@ CONV = 'conv'
 MAXPOOL = 'maxpool'
 ORDER2D = {
     CNN_LSTM: {
-        RAW: { CONV, MAXPOOL, CONV, CONV },
-        PSD: { CONV, CONV, MAXPOOL, CONV },
+        RAW: [ CONV, MAXPOOL, CONV, CONV ],
+        PSD: [ CONV, CONV, MAXPOOL, CONV ],
     },
     RESNET_LSTM: {
-        RAW: { CONV, MAXPOOL },
-        PSD: { CONV, MAXPOOL },
+        RAW: [ CONV, MAXPOOL ],
+        PSD: [ CONV, MAXPOOL ],
     },
 }
 
@@ -106,9 +106,11 @@ class FeatureExtractorManager:
         self,
         model,
         encoder,
+        output_dim: int = 1,
     ):
-        self.model   = model
-        self.encoder = encoder
+        self.model      = model
+        self.encoder    = encoder
+        self.output_dim = output_dim
 
     def get_feature_extractor(self):
         return FEATURE_EXTRACTORS[self.encoder]
@@ -133,11 +135,12 @@ class FeatureExtractorManager:
                     activation,
                     dropout,
                 ))
+                self.output_dim = conv2d_pms[f"out_{conv_count}"]
                 conv_count += 1
             elif layer == MAXPOOL:
                 layers.append(nn.MaxPool2d(
-                    kernel_size=max2d_pms['kernel'],
-                    stride=max2d_pms['stride'],
+                    kernel_size = max2d_pms['kernel'],
+                    stride      = max2d_pms['stride'],
                 ))
         return nn.Sequential(*layers)
 
