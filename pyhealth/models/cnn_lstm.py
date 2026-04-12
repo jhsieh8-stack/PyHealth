@@ -105,7 +105,7 @@ class CNNLSTM(BaseModel):
                 hidden_size=self.hidden_dim,
                 num_layers=self.num_layers,
                 batch_first=True,
-                dropout=self.dropout)
+                dropout=dropout)
 
         self.classifier = nn.Sequential(
                 nn.Linear(in_features=self.hidden_dim, out_features=64, bias=True),
