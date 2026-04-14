@@ -39,14 +39,11 @@ class TestConv2dResNetLSTM(unittest.TestCase):
         self.output_dim = 3
         self.device = "cpu"
 
-        signals = torch.tensor(np.random.randn(self.batch_size, self.seq_len, self.in_channel).astype(np.float32))
-        print(signals.size())
-
         self.samples = []
         for i in range(self.batch_size):
             self.samples.append({
                 "patient_id": f"p{i}",
-                "signal": signals[i].tolist(),
+                "signal": torch.randn((20, 6000)) * 50 - 20,
                 "label": torch.ones(1500, dtype=torch.uint8),
                 # "label_bitgt_1": label_bitgt_1,
                 # "label_bitgt_2": label_bitgt_2,
@@ -74,7 +71,6 @@ class TestConv2dResNetLSTM(unittest.TestCase):
             dataset=self.dataset,
             encoder=None,
             num_layers=1,
-            in_channel=self.in_channel,
             output_dim=self.output_dim,
             batch_size=self.batch_size,
             device=self.device,
