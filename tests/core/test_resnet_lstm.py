@@ -39,14 +39,14 @@ class TestConv2dResNetLSTM(unittest.TestCase):
         self.output_dim = 3
         self.device = "cpu"
 
-        self.samples = [self.__generate_samples(i) for i in range(self.batch_size)]
+        self.samples = [self.__generate_random_samples(i) for i in range(self.batch_size)]
         task_name    : str            = "tusz_task"
         input_schema : Dict[str, str] = { "signal": "tensor" }
         output_schema: Dict[str, str] = {
-            "label": "tensor",
+            "label"        : "tensor",
             "label_bitgt_1": "tensor",
             "label_bitgt_2": "tensor",
-            "label_name": "text",
+            "label_name"   : "text",
         }
 
         self.dataset = create_sample_dataset(
@@ -68,7 +68,7 @@ class TestConv2dResNetLSTM(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
 
-    def __generate_samples(self, i):
+    def __generate_random_samples(self, i):
         num = random.randint(1, 3)
         if num == 1:
             return {
