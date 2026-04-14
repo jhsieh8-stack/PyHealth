@@ -3,8 +3,8 @@ import torch
 import os
 import tempfile
 import shutil
-import numpy as np
 from typing import Dict
+import random
 
 from pyhealth.models import ResNetLSTM, CNNLSTM
 from pyhealth.datasets import create_sample_dataset
@@ -39,45 +39,66 @@ class TestConv2dResNetLSTM(unittest.TestCase):
         self.output_dim = 3
         self.device = "cpu"
 
-        self.samples = []
-        for i in range(self.batch_size):
-            self.samples.append({
-                "patient_id": f"p{i}",
-                "signal": torch.randn((20, 6000)) * 50 - 20,
-                "label": torch.ones(1500, dtype=torch.uint8),
-                # "label_bitgt_1": label_bitgt_1,
-                # "label_bitgt_2": label_bitgt_2,
-                # "label_name": label_name
-            })
-
-            task_name: str = "tusz_task"
-            input_schema: Dict[str, str] = { "signal": "tensor" }
-            output_schema: Dict[str, str] = {
-                "label": "tensor",
-                # "label_bitgt_1": "tensor",
-                # "label_bitgt_2": "tensor",
-                # "label_name": "text",
-            }
+        self.samples = [self.__generate_samples(i) for i in range(self.batch_size)]
+        task_name    : str            = "tusz_task"
+        input_schema : Dict[str, str] = { "signal": "tensor" }
+        output_schema: Dict[str, str] = {
+            "label": "tensor",
+            "label_bitgt_1": "tensor",
+            "label_bitgt_2": "tensor",
+            "label_name": "text",
+        }
 
         self.dataset = create_sample_dataset(
-            samples=self.samples,
-            input_schema=input_schema,
-            output_schema=output_schema,
-            dataset_name="tusz",
-            task_name=task_name
+            samples       = self.samples,
+            input_schema  = input_schema,
+            output_schema = output_schema,
+            dataset_name  = "tusz",
+            task_name     = task_name
         )
 
         self.model = CNNLSTM(
             dataset=self.dataset,
-            encoder=None,
-            num_layers=1,
-            output_dim=self.output_dim,
-            batch_size=self.batch_size,
-            device=self.device,
+            encoder    = None,
+            num_layers = 1,
+            output_dim = self.output_dim,
+            batch_size = self.batch_size,
         )
 
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
+
+    def __generate_samples(self, i):
+        num = random.randint(1, 3)
+        if num == 1:
+            return {
+                "patient_id": f"p{i}",
+                "signal": torch.randn((20, 6000)) * 50 - 20,
+                "label": torch.zeros(1500, dtype=torch.uint8),
+                "label_bitgt_1": torch.zeros(1500, dtype=torch.uint8),
+                "label_bitgt_2": torch.zeros(1500, dtype=torch.uint8),
+                "label_name": '0_patF'
+            }
+
+        if num == 2:
+            return {
+                "patient_id": f"p{i}",
+                "signal": torch.randn((20, 6000)) * 50 - 20,
+                "label": torch.ones(1500, dtype=torch.uint8),
+                "label_bitgt_1": torch.ones(1500, dtype=torch.uint8),
+                "label_bitgt_2": torch.ones(1500, dtype=torch.uint8),
+                "label_name": '1_middle'
+            }
+
+        return {
+            "patient_id": f"p{i}",
+            "signal": torch.randn((20, 6000)) * 50 - 20,
+            "label": torch.full((1500,), 5, dtype=torch.uint8),
+            "label_bitgt_1": torch.ones(1500, dtype=torch.uint8),
+            "label_bitgt_2": torch.ones(1500, dtype=torch.uint8),
+            "label_name": '5_middle'
+        }
+
 
     # BASIC FUNCTIONAL TESTS
 

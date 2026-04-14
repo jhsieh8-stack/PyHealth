@@ -66,7 +66,6 @@ class CNNLSTM(BaseModel):
         ...     num_layers=2,
         ...     output_dim=2,
         ...     batch_size=32,
-        ...     device="cpu",
         ... )
     """
 
@@ -82,7 +81,7 @@ class CNNLSTM(BaseModel):
         super(CNNLSTM, self).__init__(
             dataset=dataset,
         )
-        self.encoder = encoder
+        self.encoder    = encoder
         self.num_layers = num_layers
         self.output_dim = output_dim
         self.batch_size = batch_size
