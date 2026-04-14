@@ -72,31 +72,31 @@ class TestConv2dResNetLSTM(unittest.TestCase):
         num = random.randint(1, 3)
         if num == 1:
             return {
-                "patient_id": f"p{i}",
-                "signal": torch.randn((20, 6000)) * 50 - 20,
-                "label": torch.zeros(1500, dtype=torch.uint8),
+                "patient_id"   : f"p{i}",
+                "signal"       : torch.randn((20, 6000)) * 50 - 20,
+                "label"        : torch.zeros(1500, dtype=torch.uint8),
                 "label_bitgt_1": torch.zeros(1500, dtype=torch.uint8),
                 "label_bitgt_2": torch.zeros(1500, dtype=torch.uint8),
-                "label_name": '0_patF'
+                "label_name"   : '0_patF'
             }
 
         if num == 2:
             return {
-                "patient_id": f"p{i}",
-                "signal": torch.randn((20, 6000)) * 50 - 20,
-                "label": torch.ones(1500, dtype=torch.uint8),
+                "patient_id"   : f"p{i}",
+                "signal"       : torch.randn((20, 6000)) * 50 - 20,
+                "label"        : torch.ones(1500, dtype=torch.uint8),
                 "label_bitgt_1": torch.ones(1500, dtype=torch.uint8),
                 "label_bitgt_2": torch.ones(1500, dtype=torch.uint8),
-                "label_name": '1_middle'
+                "label_name"   : '1_middle'
             }
 
         return {
-            "patient_id": f"p{i}",
-            "signal": torch.randn((20, 6000)) * 50 - 20,
-            "label": torch.full((1500,), 5, dtype=torch.uint8),
+            "patient_id"   : f"p{i}",
+            "signal"       : torch.randn((20, 6000)) * 50 - 20,
+            "label"        : torch.full((1500,), 5, dtype=torch.uint8),
             "label_bitgt_1": torch.ones(1500, dtype=torch.uint8),
             "label_bitgt_2": torch.ones(1500, dtype=torch.uint8),
-            "label_name": '5_middle'
+            "label_name"   : '5_middle'
         }
 
 
