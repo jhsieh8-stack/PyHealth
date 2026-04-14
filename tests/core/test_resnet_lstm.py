@@ -4,9 +4,10 @@ import os
 import tempfile
 import shutil
 import numpy as np
+from typing import Dict
 
-from pyhealth.datasets import SampleDataset
-from pyhealth.models import Conv2dResNetLSTM
+from pyhealth.models import ResNetLSTM, CNNLSTM
+from pyhealth.datasets import create_sample_dataset
 
 
 class TestConv2dResNetLSTM(unittest.TestCase):
@@ -38,26 +39,42 @@ class TestConv2dResNetLSTM(unittest.TestCase):
         self.output_dim = 3
         self.device = "cpu"
 
-        signals = np.random.randn(self.batch_size, self.seq_len, self.in_channel).astype(np.float32)
-        labels = np.random.randint(0, self.output_dim, size=(self.batch_size,))
+        signals = torch.tensor(np.random.randn(self.batch_size, self.seq_len, self.in_channel).astype(np.float32))
+        print(signals.size())
 
         self.samples = []
         for i in range(self.batch_size):
             self.samples.append({
                 "patient_id": f"p{i}",
-                "visit_id": f"v{i}",
                 "signal": signals[i].tolist(),
-                "label": int(labels[i]),
+                "label": torch.tensor([
+                    'EEG FP1','EEG FP2','EEG F3','EEG F4','EEG F7','EEG F8',
+                    'EEG C3','EEG C4','EEG CZ','EEG T3','EEG T4',
+                    'EEG P3','EEG P4','EEG O1','EEG O2','EEG T5','EEG T6','EEG PZ','EEG FZ'
+                ]),
+                # "label_bitgt_1": label_bitgt_1,
+                # "label_bitgt_2": label_bitgt_2,
+                # "label_name": label_name
             })
 
-        self.dataset = SampleDataset(
+            task_name: str = "tusz_task"
+            input_schema: Dict[str, str] = { "signal": "tensor" }
+            output_schema: Dict[str, str] = {
+                "label": "tensor",
+                # "label_bitgt_1": "tensor",
+                # "label_bitgt_2": "tensor",
+                # "label_name": "text",
+            }
+
+        self.dataset = create_sample_dataset(
             samples=self.samples,
-            input_schema={"signal": "sequence"},
-            output_schema={"label": "multiclass"},
-            dataset_name="tuh_test",
+            input_schema=input_schema,
+            output_schema=output_schema,
+            dataset_name="tusz",
+            task_name=task_name
         )
 
-        self.model = Conv2dResNetLSTM(
+        self.model = CNNLSTM(
             dataset=self.dataset,
             encoder=None,
             num_layers=1,
