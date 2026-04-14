@@ -47,11 +47,7 @@ class TestConv2dResNetLSTM(unittest.TestCase):
             self.samples.append({
                 "patient_id": f"p{i}",
                 "signal": signals[i].tolist(),
-                "label": torch.tensor([
-                    'EEG FP1','EEG FP2','EEG F3','EEG F4','EEG F7','EEG F8',
-                    'EEG C3','EEG C4','EEG CZ','EEG T3','EEG T4',
-                    'EEG P3','EEG P4','EEG O1','EEG O2','EEG T5','EEG T6','EEG PZ','EEG FZ'
-                ]),
+                "label": torch.ones(1500, dtype=torch.uint8),
                 # "label_bitgt_1": label_bitgt_1,
                 # "label_bitgt_2": label_bitgt_2,
                 # "label_name": label_name
