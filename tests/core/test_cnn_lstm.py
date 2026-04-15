@@ -68,9 +68,7 @@ class TestCNNLSTM(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
 
-    # -----------------------------------
     # SAMPLE GENERATION
-    # -----------------------------------
 
     def __generate_random_samples(self, i):
         num = random.randint(1, 3)
@@ -104,9 +102,7 @@ class TestCNNLSTM(unittest.TestCase):
 
         return base
 
-    # -----------------------------------
     # BASIC FUNCTIONAL TESTS
-    # -----------------------------------
 
     def test_forward(self):
         x = torch.randn(self.batch_size, self.seq_len, self.in_channel)
@@ -125,9 +121,7 @@ class TestCNNLSTM(unittest.TestCase):
         self.assertEqual(h.shape, (1, self.batch_size, 256))
         self.assertEqual(c.shape, (1, self.batch_size, 256))
 
-    # -----------------------------------
     # GRADIENT TEST
-    # -----------------------------------
 
     def test_backward(self):
         x = torch.randn(self.batch_size, self.seq_len, self.in_channel)
@@ -145,9 +139,7 @@ class TestCNNLSTM(unittest.TestCase):
 
         self.assertTrue(has_grad)
 
-    # -----------------------------------
     # MINI TRAINING STEP
-    # -----------------------------------
 
     def test_training_step(self):
         x = torch.randn(self.batch_size, self.seq_len, self.in_channel)
@@ -170,9 +162,7 @@ class TestCNNLSTM(unittest.TestCase):
 
         self.assertNotEqual(loss1.item(), loss2.item())
 
-    # -----------------------------------
     # NUMERICAL STABILITY
-    # -----------------------------------
 
     def test_output_is_finite(self):
         x = torch.randn(self.batch_size, self.seq_len, self.in_channel)
@@ -183,9 +173,7 @@ class TestCNNLSTM(unittest.TestCase):
         self.assertFalse(torch.isnan(output).any())
         self.assertFalse(torch.isinf(output).any())
 
-    # -----------------------------------
     # CONSISTENCY TEST
-    # -----------------------------------
 
     def test_deterministic_forward(self):
         x = torch.randn(self.batch_size, self.seq_len, self.in_channel)
