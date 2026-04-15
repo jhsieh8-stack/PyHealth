@@ -8,35 +8,50 @@ from .eeg_feature_extractors import FeatureExtractorManager, CNN_LSTM
 
 
 class CNNLSTM(BaseModel):
+
     """CNN + LSTM model for EEG classification in PyHealth 2.0.
 
-    The model processes raw multi-channel EEG signals through a pre-trained
-    feature extractor, a three-stage 2-D convolutional encoder, and a
-    multi-layer LSTM. The final LSTM output is passed to a small fully
-    connected classification head.
+    The model processes raw multi-channel EEG signals through an optional
+    feature extractor, a convolutional encoder, and a multi-layer LSTM.
+    The final LSTM output is passed to a small fully connected classification head.
 
     Pipeline:
-        1. A pre-trained ``feature_extractor`` (e.g. a spectrogram or wavelet
-           transform) converts the raw EEG signal into a 2-D time–frequency
-           representation.
-        2. ``feature_extractor_cnn`` applies three successive Conv2d stages
-           to project the representation through 64 → 128 → 256 channels.
-        3. Adaptive average pooling collapses the spatial dimension to 1×1,
-           yielding a per-frame feature vector of size 256.
-        4. The LSTM models temporal dependencies across frames; only the last
-           output step is retained.
-        5. A two-layer fully-connected head maps the LSTM output to
-           ``output_dim`` logits.
+        1. (Optional) A ``feature_extractor`` (e.g. spectrogram or wavelet
+        transform) converts the raw EEG signal into a 2-D representation.
+        If ``encoder=None``, the raw signal is used directly.
+        2. ``feature_transformer`` reshapes/transforms the features into a format
+        suitable for convolutional processing.
+        3. ``feature_extractor_cnn`` applies a Conv2d-based encoder to extract
+        higher-level representations (exact architecture depends on the
+        FeatureExtractorManager implementation).
+        4. Adaptive average pooling collapses the spatial dimension to 1×1,
+        yielding a per-frame feature vector.
+        5. The LSTM models temporal dependencies across frames; only the last
+        output step is retained.
+        6. A two-layer fully-connected head maps the LSTM output to
+        ``output_dim`` logits.
 
     Args:
-        dataset (SampleDataset): dataset with fitted input and output processors.
-        encoder (str): name of the pre-trained feature extractor backbone.
-        num_layers (int): number of LSTM layers.
-        output_dim (int): number of output classes / regression targets.
-        batch_size (int): batch size; used to initialise the LSTM hidden state.
-        device (str): device string for hidden-state initialisation (e.g. ``"cuda"``).
-        dropout (float): dropout probability applied after activations and
-            between LSTM layers. Default is 0.5.
+        dataset (SampleDataset):
+            Dataset with fitted input and output processors.
+
+        encoder (str or None):
+            Name of the feature extractor backbone.
+            If None, no pre-trained feature extraction is applied.
+
+        num_layers (int):
+            Number of LSTM layers.
+
+        output_dim (int):
+            Number of output classes or regression targets.
+
+        batch_size (int):
+            Batch size used to initialise the LSTM hidden state.
+            NOTE: This must match the actual batch size used during forward pass.
+
+        dropout (float):
+            Dropout probability applied after activations and between LSTM layers.
+            Default is 0.5.
 
     Example:
         >>> from pyhealth.datasets import create_sample_dataset
@@ -44,32 +59,47 @@ class CNNLSTM(BaseModel):
         ...     {
         ...         "patient_id": "p0",
         ...         "visit_id": "v0",
-        ...         "eeg": [[0.1, 0.2, ...], ...],   # (electrodes, timesteps)
+        ...         "signal": [[0.1, 0.2, ...], ...],   # shape: (channels, timesteps)
         ...         "label": 1,
         ...     },
         ...     {
         ...         "patient_id": "p1",
         ...         "visit_id": "v1",
-        ...         "eeg": [[0.3, 0.1, ...], ...],
+        ...         "signal": [[0.3, 0.1, ...], ...],
         ...         "label": 0,
         ...     },
         ... ]
         >>> dataset = create_sample_dataset(
         ...     samples=samples,
-        ...     input_schema={"eeg": "timeseries"},
+        ...     input_schema={"signal": "tensor"},
         ...     output_schema={"label": "binary"},
         ...     dataset_name="toy",
         ... )
         >>> model = CNNLSTM(
-        ...     dataset,
-        ...     encoder="stft",
+        ...     dataset=dataset,
+        ...     encoder=None,
         ...     num_layers=2,
         ...     output_dim=2,
         ...     batch_size=32,
-        ...     device="cpu",
         ... )
-    """
 
+    Forward:
+        Input:
+            x: tensor of shape [batch_size, sequence_length, channels]
+
+        Output:
+            output:
+                Tensor of shape [batch_size, output_dim] (logits)
+
+            hidden:
+                Tuple (h_n, c_n) where each has shape
+                [num_layers, batch_size, hidden_dim]
+
+    Notes:
+        - Input is internally permuted to [batch, channels, time].
+        - The CNN architecture depends on FeatureExtractorManager.
+        - The model assumes fixed batch size due to hidden state initialization.
+    """
     def __init__(
             self,
             dataset: SampleDataset,
@@ -82,7 +112,7 @@ class CNNLSTM(BaseModel):
         super(CNNLSTM, self).__init__(
             dataset=dataset,
         )
-        self.encoder = encoder
+        self.encoder    = encoder
         self.num_layers = num_layers
         self.output_dim = output_dim
         self.batch_size = batch_size

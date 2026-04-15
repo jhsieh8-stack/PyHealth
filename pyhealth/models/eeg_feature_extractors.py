@@ -109,7 +109,7 @@ class FeatureExtractorManager:
         output_dim: int = 1,
     ):
         self.model      = model
-        self.encoder    = encoder
+        self.encoder    = encoder or RAW
         self.output_dim = output_dim
 
     def get_feature_extractor(self):

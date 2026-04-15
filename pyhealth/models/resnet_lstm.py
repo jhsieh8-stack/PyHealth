@@ -39,53 +39,60 @@ class BasicBlock(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward propagation.
 
-        Args:
-            x: input tensor of shape [batch size, in_planes, height, width].
-
-        Returns:
-            output tensor of shape [batch size, planes, height, width // stride].
-        """
         out = self.net(x)
         out += self.shortcut(x)
         return torch.relu(out)
 
 
 class ResNetLSTM(BaseModel):
-    """2-D ResNet + LSTM model for ECG / multivariate timeseries classification.
+    """2-D ResNet + LSTM model for multivariate time-series classification.
 
-    The model processes each input sample through a configurable feature
-    extractor, a stack of residual convolutional blocks (ResNet), and a
-    multi-layer LSTM. The final LSTM hidden state is passed to a small
-    classification head that produces the output logits.
+    The model processes multi-channel signals (e.g., EEG/ECG) through an optional
+    feature extractor, a residual convolutional encoder (ResNet-style), and a
+    multi-layer LSTM. The final LSTM hidden state is passed to a classification
+    head that produces output logits.
 
     Pipeline:
-        1. An optional pre-trained ``feature_extractor`` (e.g. a spectrogram
-           or wavelet transform) reshapes the raw signal into a 2-D
-           representation.
-        2. ``feature_extractor_cnn`` applies two initial Conv2d layers to
-           project the signal into a 64-channel feature map.
-        3. Three ``BasicBlock`` residual stages progressively increase the
-           channel depth (64 → 128 → 256) while halving the temporal
-           resolution in stages 2 and 3.
-        4. Adaptive average pooling collapses the spatial dimension to 1×1,
-           yielding a per-frame feature vector of size 256.
-        5. The LSTM models temporal dependencies across frames; only the last
-           output step is retained.
-        6. A two-layer fully-connected head maps the LSTM output to
-           ``output_dim`` logits.
+        1. (Optional) A ``feature_extractor`` (e.g. spectrogram or wavelet
+        transform) converts the raw signal into a 2-D representation.
+        If ``encoder=None``, the raw signal is used directly.
+        2. ``feature_transformer`` reshapes/transforms the features into a format
+        suitable for convolutional processing.
+        3. ``feature_extractor_cnn`` applies initial Conv2d layers to project the
+        signal into a feature map (exact architecture depends on the
+        FeatureExtractorManager implementation).
+        4. Three residual stages (``BasicBlock``) progressively refine the
+        representation and increase channel depth (typically 64 → 128 → 256),
+        optionally reducing temporal resolution via stride.
+        5. Adaptive average pooling collapses the spatial dimension to 1×1,
+        yielding a per-frame feature vector.
+        6. The LSTM models temporal dependencies across frames; only the last
+        output step is retained.
+        7. A two-layer fully-connected head maps the LSTM output to
+        ``output_dim`` logits.
 
     Args:
-        dataset (SampleDataset): dataset with fitted input and output processors.
-        encoder (str): name of the pre-trained feature extractor backbone.
-        num_layers (int): number of LSTM layers.
-        in_channel (int): number of input channels (e.g. ECG leads).
-        output_dim (int): number of output classes / regression targets.
-        batch_size (int): batch size; used to initialise the LSTM hidden state.
-        device (str): device string passed to hidden-state initialisation (e.g. ``"cuda"``).
-        dropout (float): dropout probability applied after activations and
-            between LSTM layers. Default is 0.5.
+        dataset (SampleDataset):
+            Dataset with fitted input and output processors.
+
+        encoder (str or None):
+            Name of the feature extractor backbone.
+            If None, no pre-trained feature extraction is applied.
+
+        num_layers (int):
+            Number of LSTM layers.
+
+        output_dim (int):
+            Number of output classes or regression targets.
+
+        batch_size (int):
+            Batch size used to initialise the LSTM hidden state.
+            NOTE: This must match the actual batch size during forward pass.
+
+        dropout (float):
+            Dropout probability applied after activations and between LSTM layers.
+            Default is 0.5.
 
     Example:
         >>> from pyhealth.datasets import create_sample_dataset
@@ -93,33 +100,47 @@ class ResNetLSTM(BaseModel):
         ...     {
         ...         "patient_id": "p0",
         ...         "visit_id": "v0",
-        ...         "ecg": [[0.1, 0.2, ...], ...],   # (leads, timesteps)
+        ...         "signal": [[0.1, 0.2, ...], ...],   # shape: (channels, timesteps)
         ...         "label": 1,
         ...     },
         ...     {
         ...         "patient_id": "p1",
         ...         "visit_id": "v1",
-        ...         "ecg": [[0.3, 0.1, ...], ...],
+        ...         "signal": [[0.3, 0.1, ...], ...],
         ...         "label": 0,
         ...     },
         ... ]
         >>> dataset = create_sample_dataset(
         ...     samples=samples,
-        ...     input_schema={"ecg": "timeseries"},
+        ...     input_schema={"signal": "tensor"},
         ...     output_schema={"label": "binary"},
         ...     dataset_name="toy",
         ... )
         >>> model = ResNetLSTM(
-        ...     dataset,
-        ...     encoder="resnet",
+        ...     dataset=dataset,
+        ...     encoder=None,
         ...     num_layers=2,
-        ...     in_channel=12,
         ...     output_dim=2,
         ...     batch_size=32,
-        ...     device="cpu",
         ... )
-    """
 
+    Forward:
+        Input:
+            x: tensor of shape [batch_size, sequence_length, channels]
+
+        Output:
+            output:
+                Tensor of shape [batch_size, output_dim] (logits)
+
+            hidden:
+                Tuple (h_n, c_n) where each has shape
+                [num_layers, batch_size, hidden_dim]
+
+    Notes:
+        - Input is internally permuted to [batch, channels, time].
+        - CNN architecture depends on FeatureExtractorManager.
+        - The model assumes fixed batch size due to hidden state initialization.
+    """
     def __init__(
         self,
         dataset: SampleDataset,

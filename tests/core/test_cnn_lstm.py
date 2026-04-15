@@ -6,16 +6,16 @@ import shutil
 from typing import Dict
 import random
 
-from pyhealth.models import ResNetLSTM, CNNLSTM
+from pyhealth.models import CNNLSTM
 from pyhealth.datasets import create_sample_dataset
 
 
-class TestConv2dResNetLSTM(unittest.TestCase):
+class TestCNNLSTM(unittest.TestCase):
 
     def setUp(self):
         torch.manual_seed(42)
 
-        # TUH-like fake structure 
+        # ---- TUH-like fake structure ----
         self.temp_dir = tempfile.mkdtemp()
         self.base_path = os.path.join(
             self.temp_dir,
@@ -32,73 +32,75 @@ class TestConv2dResNetLSTM(unittest.TestCase):
         )
         os.makedirs(self.sample_dir, exist_ok=True)
 
-        # Fake EEG data 
+        # ---- Fake EEG data ----
         self.batch_size = 2
-        self.seq_len = 120
-        self.in_channel = 8
+        self.seq_len = 6000   # realistic EEG length
+        self.in_channel = 20  # EEG electrodes
         self.output_dim = 3
-        self.device = "cpu"
 
         self.samples = [self.__generate_random_samples(i) for i in range(self.batch_size)]
-        task_name    : str            = "tusz_task"
-        input_schema : Dict[str, str] = { "signal": "tensor" }
+
+        task_name: str = "tusz_task"
+        input_schema: Dict[str, str] = {"signal": "tensor"}
         output_schema: Dict[str, str] = {
-            "label"        : "tensor",
+            "label": "tensor",
             "label_bitgt_1": "tensor",
             "label_bitgt_2": "tensor",
-            "label_name"   : "text",
+            "label_name": "text",
         }
 
         self.dataset = create_sample_dataset(
-            samples       = self.samples,
-            input_schema  = input_schema,
-            output_schema = output_schema,
-            dataset_name  = "tusz",
-            task_name     = task_name
+            samples=self.samples,
+            input_schema=input_schema,
+            output_schema=output_schema,
+            dataset_name="tusz",
+            task_name=task_name
         )
 
         self.model = CNNLSTM(
             dataset=self.dataset,
-            encoder    = None,
-            num_layers = 1,
-            output_dim = self.output_dim,
-            batch_size = self.batch_size,
+            encoder=None,   # keep None for stable unit tests
+            num_layers=1,
+            output_dim=self.output_dim,
+            batch_size=self.batch_size,
         )
 
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
 
+    # SAMPLE GENERATION
+
     def __generate_random_samples(self, i):
         num = random.randint(1, 3)
-        if num == 1:
-            return {
-                "patient_id"   : f"p{i}",
-                "signal"       : torch.randn((20, 6000)) * 50 - 20,
-                "label"        : torch.zeros(1500, dtype=torch.uint8),
-                "label_bitgt_1": torch.zeros(1500, dtype=torch.uint8),
-                "label_bitgt_2": torch.zeros(1500, dtype=torch.uint8),
-                "label_name"   : '0_patF'
-            }
 
-        if num == 2:
-            return {
-                "patient_id"   : f"p{i}",
-                "signal"       : torch.randn((20, 6000)) * 50 - 20,
-                "label"        : torch.ones(1500, dtype=torch.uint8),
-                "label_bitgt_1": torch.ones(1500, dtype=torch.uint8),
-                "label_bitgt_2": torch.ones(1500, dtype=torch.uint8),
-                "label_name"   : '1_middle'
-            }
-
-        return {
-            "patient_id"   : f"p{i}",
-            "signal"       : torch.randn((20, 6000)) * 50 - 20,
-            "label"        : torch.full((1500,), 5, dtype=torch.uint8),
-            "label_bitgt_1": torch.ones(1500, dtype=torch.uint8),
-            "label_bitgt_2": torch.ones(1500, dtype=torch.uint8),
-            "label_name"   : '5_middle'
+        base = {
+            "patient_id": f"p{i}",
+            "signal": torch.randn((self.in_channel, self.seq_len)) * 50 - 20,
         }
 
+        if num == 1:
+            base.update({
+                "label": torch.zeros(1500, dtype=torch.uint8),
+                "label_bitgt_1": torch.zeros(1500, dtype=torch.uint8),
+                "label_bitgt_2": torch.zeros(1500, dtype=torch.uint8),
+                "label_name": "0_patF"
+            })
+        elif num == 2:
+            base.update({
+                "label": torch.ones(1500, dtype=torch.uint8),
+                "label_bitgt_1": torch.ones(1500, dtype=torch.uint8),
+                "label_bitgt_2": torch.ones(1500, dtype=torch.uint8),
+                "label_name": "1_middle"
+            })
+        else:
+            base.update({
+                "label": torch.full((1500,), 5, dtype=torch.uint8),
+                "label_bitgt_1": torch.ones(1500, dtype=torch.uint8),
+                "label_bitgt_2": torch.ones(1500, dtype=torch.uint8),
+                "label_name": "5_middle"
+            })
+
+        return base
 
     # BASIC FUNCTIONAL TESTS
 
@@ -158,7 +160,6 @@ class TestConv2dResNetLSTM(unittest.TestCase):
         output2, _ = self.model(x)
         loss2 = loss_fn(output2, target)
 
-        # Loss should change after update (not necessarily decrease, but different)
         self.assertNotEqual(loss1.item(), loss2.item())
 
     # NUMERICAL STABILITY
@@ -169,6 +170,8 @@ class TestConv2dResNetLSTM(unittest.TestCase):
         output, _ = self.model(x)
 
         self.assertTrue(torch.isfinite(output).all())
+        self.assertFalse(torch.isnan(output).any())
+        self.assertFalse(torch.isinf(output).any())
 
     # CONSISTENCY TEST
 
