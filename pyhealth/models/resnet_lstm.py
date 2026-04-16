@@ -1,5 +1,20 @@
-# Description: ResNetLSTM model implementation for PyHealth 2.0
+"""
+PyHealth task for extracting features with STFT and Frequency Bands using the Temple University Hospital (TUH) EEG Seizure Corpus (TUSZ) dataset V2.0.5.
 
+Dataset link:
+    https://isip.piconepress.com/projects/nedc/html/tuh_eeg/index.shtml
+
+Dataset paper:
+    Vinit Shah, Eva von Weltin, Silvia Lopez, et al., “The Temple University Hospital Seizure Detection Corpus,” arXiv preprint arXiv:1801.08085, 2018. Available: https://arxiv.org/abs/1801.08085
+
+Dataset paper link:
+    https://arxiv.org/abs/1801.08085
+
+Author:
+    Fernando Kenji Sakabe (fks@illinois.edu), 
+    Jesica Hirsch (jesicah2@illinois.edu), 
+    Jung-Jung Hsieh (jhsieh8@illinois.edu)
+"""
 import torch
 from torch import nn
 
@@ -94,28 +109,39 @@ class ResNetLSTM(BaseModel):
             Dropout probability applied after activations and between LSTM layers.
             Default is 0.5.
 
-    Example:
+    Examples:
         >>> from pyhealth.datasets import create_sample_dataset
         >>> samples = [
         ...     {
-        ...         "patient_id": "p0",
-        ...         "visit_id": "v0",
-        ...         "signal": [[0.1, 0.2, ...], ...],   # shape: (channels, timesteps)
-        ...         "label": 1,
+        ...         "patient_id": "patienta",
+        ...         "record_id": "s001_2003",
+        ...         "signal_file": "dev/patienta/s001_2003/01_tcp_ar/patienta_s001_2003.edf",
         ...     },
         ...     {
-        ...         "patient_id": "p1",
-        ...         "visit_id": "v1",
-        ...         "signal": [[0.3, 0.1, ...], ...],
-        ...         "label": 0,
+        ...         "patient_id": "patientb",
+        ...         "record_id": "s007_2014",
+        ...         "signal_file": "eval/patientb/s007_2014/01_tcp_ar/patientb_s007_2014.edf",
         ...     },
         ... ]
+        >>>
+        >>> # dataset
         >>> dataset = create_sample_dataset(
         ...     samples=samples,
-        ...     input_schema={"signal": "tensor"},
-        ...     output_schema={"label": "binary"},
-        ...     dataset_name="toy",
+        ...     input_schema={
+        ...         "signal": "tensor",
+        ...     },
+        ...     output_schema={
+        ...         "label": "tensor"
+        ...         "label_bitgt_1": "tensor",
+        ...         "label_bitgt_2": "tensor",
+        ...         "label_name": "text",
+        ...     },
         ... )
+        >>>
+        >>> # data loader
+        >>> from pyhealth.datasets import get_dataloader
+        >>> train_loader = get_dataloader(dataset, batch_size=2, shuffle=True)
+        >>>
         >>> model = ResNetLSTM(
         ...     dataset=dataset,
         ...     encoder=None,

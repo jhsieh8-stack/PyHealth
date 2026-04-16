@@ -1,3 +1,20 @@
+"""
+PyHealth task for extracting features with STFT and Frequency Bands using the Temple University Hospital (TUH) EEG Seizure Corpus (TUSZ) dataset V2.0.5.
+
+Dataset link:
+    https://isip.piconepress.com/projects/nedc/html/tuh_eeg/index.shtml
+
+Dataset paper:
+    Vinit Shah, Eva von Weltin, Silvia Lopez, et al., “The Temple University Hospital Seizure Detection Corpus,” arXiv preprint arXiv:1801.08085, 2018. Available: https://arxiv.org/abs/1801.08085
+
+Dataset paper link:
+    https://arxiv.org/abs/1801.08085
+
+Author:
+    Fernando Kenji Sakabe (fks@illinois.edu), 
+    Jesica Hirsch (jesicah2@illinois.edu), 
+    Jung-Jung Hsieh (jhsieh8@illinois.edu)
+"""
 import torchaudio
 
 import torch

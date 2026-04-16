@@ -14,7 +14,7 @@ from .multilabel import multilabel_metrics_fn
 from .ranking import ranking_metrics_fn
 from .regression import regression_metrics_fn
 
-from .eeg_margin_train import eeg_margin_train_fn
+from .eeg_margin import eeg_margin_fn
 
 __all__ = [
     "binary_metrics_fn",
@@ -28,5 +28,5 @@ __all__ = [
     "multilabel_metrics_fn",
     "ranking_metrics_fn",
     "regression_metrics_fn",
-    "eeg_margin_train_fn",
+    "eeg_margin_fn",
 ]
