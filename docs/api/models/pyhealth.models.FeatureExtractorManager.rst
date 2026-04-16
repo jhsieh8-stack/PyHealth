@@ -1,14 +1,14 @@
-﻿pyhealth.models.EEGCnnLstmModel
+﻿pyhealth.models.FeatureExtractorManager
 ===================================
 
-The separate callable PsdFeatureExtractor and the complete EEGCnnLstmModel model.
+The separate callable FeatureExtractorManager, and PsdFeatureExtractor model.
 
 .. autoclass:: pyhealth.models.PsdFeatureExtractor
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: pyhealth.models.EEGCnnLstmModel
+.. autoclass:: pyhealth.models.FeatureExtractorManager
     :members:
     :undoc-members:
     :show-inheritance:
