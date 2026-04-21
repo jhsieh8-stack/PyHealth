@@ -23,7 +23,7 @@ from pyhealth.datasets import SampleDataset
 
 
 class TUSZSamplerDataset(IterableDataset):
-    """Sampler dataset for the TUH Seizure Corpus (TUSZ)
+    """Wrapper dataset for WeightedRandomSampler the TUH Seizure Corpus (TUSZ)
 
     Dataset is available at https://isip.piconepress.com/projects/nedc/html/tuh_eeg/index.shtml.
     
