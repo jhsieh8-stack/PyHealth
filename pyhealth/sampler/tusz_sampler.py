@@ -18,7 +18,7 @@ Author:
 import logging
 import torch
 import numpy as np
-from typing import Optional
+from typing import Any, Dict, Optional, List
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +35,10 @@ class TUSZSampler():
         is_training_set: is dataset a training set.
     """
     def __init__(self, 
-        dataset,
+        dataset: List[Dict[str, Any]],
         is_training_set: Optional[bool] = True,
         **kwargs
     ) -> None:
-        # TODO: delete
-        print(f"********** type: {type(dataset)} **********")
         self.dataset = dataset
         self.is_training_set = is_training_set
         self.output_dim = kwargs['output_dim'] if 'output_dim' in kwargs else 8
@@ -77,8 +75,6 @@ class TUSZSampler():
         """Returns a unique set of labels."""
         patient_dev_dict = {}
         for sample in self.dataset:
-            # TODO: delete
-            print(f"********** type: {type(sample)} **********")
             patient_id = sample['patient_id']
             label_name = sample['label_name']
             patient_dev_dict = self.__init_dev_patient_dict(patient_dev_dict, patient_id)
