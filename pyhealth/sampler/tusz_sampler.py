@@ -77,6 +77,8 @@ class TUSZSampler():
         """Returns a unique set of labels."""
         patient_dev_dict = {}
         for sample in self.dataset:
+            # TODO: delete
+            print(f"********** type: {type(sample)} **********")
             patient_id = sample['patient_id']
             label_name = sample['label_name']
             patient_dev_dict = self.__init_dev_patient_dict(patient_dev_dict, patient_id)

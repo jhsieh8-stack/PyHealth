@@ -47,8 +47,6 @@ class TUSZSignalHeader:
 
     def __init__(self, signal_headers: list[dict]) -> None:
         self.signal_headers = self.__extract_labels__(signal_headers)
-        # TODO: delete
-        print([sh['label'] for sh in self.signal_headers])
         self.signal_sample_rate = int(self.signal_headers[0]['sample_frequency'])
 
     def __extract_labels__(self, signal_headers: list[dict]) -> list[dict]:
